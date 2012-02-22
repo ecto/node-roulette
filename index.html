@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+<title>node-roulette</title>
+<style>
+video { -webkit-transform: scaleX(1); border: 1px solid red; }
+</style>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+var socket = io.connect();
+
+window.onload = function () {
+  if (navigator.webkitGetUserMedia) {
+    var local = document.getElementById('local');
+    var remote = document.getElementById('remote');
+    //var ctx = remote.getContext('2d');
+    var canvas = document.createElement('canvas');
+    canvas.width = local.width;
+    canvas.height= local.height;
+    var context = canvas.getContext("2d");
+    var fps = 1000 / 60;
+
+
+    /*
+for(var y = 0; y < video.height; y++)
+{
+   for(var x = 0; x < video.width; x++)
+   {
+      //r = id.data[y*video.width + x + 0]
+      //g = id.data[y*video.width + x + 1]
+      //b = id.data[y*video.width + x + 2]
+      //a = id.data[y*video.width + x + 3]
+   }
+ }
+ */
+
+    navigator.webkitGetUserMedia('video', gotStream, noStream);
+
+    function gotStream (stream) {
+      console.log(stream);
+      console.log(webkitURL.createObjectURL(stream));
+
+      local.src = webkitURL.createObjectURL(stream);
+      local.onerror = function (e) {
+        console.log(e);
+        //stream.stop();
+        streamError();
+      };
+
+      setInterval(frame, fps);
+      console.log([local.width, local.height]);
+
+    }
+
+    function frame () {
+      context.drawImage(local, 0, 0);
+      socket.emit('frame', canvas.toDataURL());
+    }
+
+    function noStream () {
+      document.getElementById('error').textContent = 'No camera available.';
+    }
+
+    function streamError () {
+      document.getElementById('error').textContent = 'Camera error.';
+    }
+
+    socket.on('frame', function (data) {
+      //ctx.drawImage(data,0,0);
+      remote.src = data;
+    });
+
+  }
+}
+
+</script>
+</head>
+<body>
+
+<h1 id="error"></h1>
+<video id="local" width="480" height="320" autoplay></video>
+<img id="remote" width="480" height="320" />
+
+</body>
+</html>
